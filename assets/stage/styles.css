@@ -1,0 +1,135 @@
+/* 演示视频设计系统
+   规则：所有动画由 JS 按帧驱动，这里禁止任何 transition / animation，
+        否则逐帧截图会出现"同一时刻两种状态"，合成后就是抖动。
+
+   排版约定（改之前先读）：
+     1. 所有间距取自 --sp1..--sp6 这一套（4/8/12/16/20/24），不要现编 11px、18px；
+     2. 圆角只有三档：--r-card 16（卡片）/ --r-btn 12（按钮）/ 胶囊 = 高的一半；
+     3. 页头、标题区、内容区共用一条竖线：left 44 + 宽 712；
+     4. 文字基线由行高决定，容器一律给显式高/行高，别让字体度量决定排版。 */
+
+:root {
+  --w: 800px;
+  --h: 1000px;
+  --pad-x: 44px;
+  --col: 712px;
+
+  --sp1: 4px;
+  --sp2: 8px;
+  --sp3: 12px;
+  --sp4: 16px;
+  --sp5: 20px;
+  --sp6: 24px;
+
+  --r-card: 16px;
+  --r-btn: 12px;
+
+  --ink: #16233b;
+  --sub: #5d7391;
+  --weak: #8ea1bd;
+  --acc: #2563eb;
+  --line: #e3ecfa;
+  --surface: #fff;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: var(--w); height: var(--h); overflow: hidden; background: #eef4ff;
+}
+
+body {
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- 舞台与背景 ---------- */
+#stage {
+  position: relative; width: var(--w); height: var(--h); overflow: hidden;
+  background:
+    url("data:image/svg+xml,%3Csvg width='160' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='10' y='50' font-family='sans-serif' font-size='14' fill='%23a8c4eb' opacity='0.15' transform='rotate(-25 10 50)'%3E 一红聊开源 %3C/text%3E%3C/svg%3E") repeat,
+    radial-gradient(circle at 50% 30%, #fff, #eef4ff 60%, #dbeafe);
+  background-size: 160px 100px, 100% 100%;
+}
+
+.scene { position: absolute; inset: 0; display: none; overflow: hidden; }
+
+/* ---------- 页头：两个字号共用一条基线 ---------- */
+.hdr {
+  position: absolute; top: 32px; left: var(--pad-x); width: var(--col);
+  height: 20px; display: flex; align-items: baseline; justify-content: space-between;
+}
+.brand {
+  display: flex; align-items: baseline; gap: var(--sp2);
+  font-size: 14px; font-weight: 700; color: #3a5680; letter-spacing: .3px;
+}
+.dot {
+  align-self: center; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--acc); box-shadow: 0 0 0 4px rgba(37, 99, 235, .13);
+}
+.idx {
+  font-family: Bahnschrift, Consolas, monospace; font-size: 12px;
+  letter-spacing: 1.4px; color: var(--weak); font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 标题区 ---------- */
+.head { position: absolute; top: 82px; left: var(--pad-x); width: var(--col); }
+.kicker {
+  font-size: 12.5px; line-height: 16px; font-weight: 700; letter-spacing: 2.6px;
+  color: var(--acc); margin-bottom: var(--sp3);
+}
+.title {
+  font-size: 38px; line-height: 1.24; font-weight: 800; letter-spacing: -.8px;
+}
+.title em { font-style: normal; color: var(--acc); }
+.lead { margin-top: var(--sp3); font-size: 15px; line-height: 1.6; color: var(--sub); }
+
+/* ---------- 内容区（固定 712x600，超出的内容必须自己缩放） ---------- */
+.body {
+  position: absolute; top: 236px; left: var(--pad-x);
+  width: var(--col); height: 600px;
+}
+
+/* ---------- 通用组件 ---------- */
+.card {
+  position: absolute; background: var(--surface); border-radius: var(--r-card);
+  padding: var(--sp5); border: 1px solid var(--line);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, .10);
+}
+.card-h { font-size: 16px; line-height: 22px; font-weight: 700; margin-bottom: var(--sp2); }
+.card-b { font-size: 13.5px; line-height: 1.7; color: var(--sub); }
+
+/* 按钮：高度写死 48，文字用 flex 居中，不靠 line-height 凑 */
+.btn {
+  position: absolute; display: inline-flex; align-items: center; justify-content: center;
+  height: 48px; padding: 0 var(--sp6); border: 0; border-radius: var(--r-btn);
+  font-family: inherit; font-size: 16px; font-weight: 700; line-height: 1; color: #fff;
+  white-space: nowrap; cursor: default; background: var(--acc);
+  box-shadow: 0 12px 26px rgba(37, 99, 235, .28);
+}
+
+/* ---------- 光标 / 点击涟漪 / 字幕底衬 ---------- */
+.subscrim {
+  position: absolute; left: 0; bottom: 0; width: var(--w); height: 190px;
+  background: linear-gradient(to bottom,
+    rgba(219, 234, 254, 0) 0%, rgba(219, 234, 254, .55) 46%, rgba(199, 220, 250, .9) 100%);
+  pointer-events: none;
+}
+#cursor {
+  position: absolute; left: 0; top: 0; width: 22px; height: 26px; pointer-events: none; z-index: 999;
+  transform-origin: 0 0;
+  /* 半透明小箭头：fill 用深色 + opacity .55，在浅色背景上不抢眼 */
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='26' viewBox='0 0 22 26'%3E%3Cpath d='M2 1.5 L2 20 L7 15.4 L10.4 23.2 L14 21.6 L10.7 14 L17.6 13.4 Z' fill='%2316233b' opacity='.55' stroke='%23fff' stroke-width='1.4' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat;
+}
+#ripple {
+  position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%;
+  border: 2.5px solid rgba(37, 99, 235, .65); opacity: 0; pointer-events: none; z-index: 998;
+}
+
+/* 悬停 / 按下：由引擎逐帧根据 elementFromPoint 加类，不用 CSS :hover */
+.cur-hover {
+  outline: 2px solid rgba(37, 99, 235, .42); outline-offset: 3px;
+  box-shadow: 0 18px 40px rgba(37, 99, 235, .18) !important;
+}
+.press { filter: brightness(.93) saturate(.9); }

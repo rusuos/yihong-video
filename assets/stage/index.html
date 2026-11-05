@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>演示视频舞台</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="stage">
+
+  <div class="hdr">
+    <div class="brand"><span class="dot"></span><span id="brandName">项目名</span></div>
+    <div class="idx" id="sceneIdx">01 / 01</div>
+  </div>
+
+  <!-- ========== 场景 1 ========== -->
+  <section class="scene" id="sc1">
+    <div class="head">
+      <div class="kicker">SECTION</div>
+      <h1 class="title">这里放<em>主标题</em></h1>
+      <p class="lead">一句话副标题，交代这一屏要说什么。</p>
+    </div>
+    <div class="body">
+      <!-- 元素一律绝对定位；left/top 相对 .body（712×600），不要用 margin 挤。
+           坐标取 4 的倍数；纵向相邻元素间距统一 24，横向统一 16。 -->
+      <div class="card" id="c1" style="left:0; top:96px; width:400px;">
+        <div class="card-h">卡片标题</div>
+        <div class="card-b">卡片正文。可放数据、图示、列表。</div>
+      </div>
+      <button class="btn" id="c1btn" style="left:0; top:220px;">立即开始</button>
+    </div>
+  </section>
+
+  <!-- 后续场景继续追加 <section class="scene" id="scN">，id 必须与 timeline 的 id 对齐 -->
+
+  <div class="subscrim"></div>
+  <div id="ripple"></div>
+  <div id="cursor"></div>
+</div>
+
+<script src="timeline.js"></script>
+<script src="kit.js"></script>
+<script src="engine.js"></script>
+<script src="scenes.js"></script>
+</body>
+</html>

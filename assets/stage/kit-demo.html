@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>kit.js 图元样张</title>
+<style>
+  /* 样张页：四块画布共用一条栅格 —— 内容左边距 24、上边距 76、
+     底栏底边 500，四块因此可以并排比对。改坐标时先看这条基线。 */
+  :root {
+    --bg: #dfe8f6;
+    --line: #e3ecfa;
+    --ink: #16233b;
+    --sub: #5d7391;
+    --tile: 780px;
+    --gap: 16px;
+    --pad: 16px;
+    --cap-h: 18px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg); padding: var(--pad); color: var(--ink);
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", "Noto Sans SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    display: grid; gap: var(--gap); justify-content: center; align-items: start;
+    grid-template-columns: repeat(2, minmax(0, var(--tile)));
+  }
+  .tile {
+    min-width: 0; overflow: hidden;
+    background: linear-gradient(180deg, #fff 0%, #f5f9ff 100%);
+    border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 10px 26px rgba(37, 99, 235, .07);
+  }
+  /* 图注左边距 = 画布内边距 24，标题与画面第一条竖线对齐 */
+  .tile h2 {
+    height: var(--cap-h); margin: 20px 24px 14px; line-height: var(--cap-h);
+    font-size: 13px; font-weight: 700; letter-spacing: .4px; color: var(--sub);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tile .cv { line-height: 0; }
+  .tile .cv svg { display: block; width: 100%; height: auto; }
+  @media (max-width: 1240px) {
+    .wrap { grid-template-columns: minmax(0, var(--tile)); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="tile"><h2>A　基础图元 / 卡片·节点·连线·标签·刻度</h2><div class="cv" id="a"></div></section>
+  <section class="tile"><h2>B　数据图元 / 柱·折线·环·读数</h2><div class="cv" id="b"></div></section>
+  <section class="tile"><h2>C　等距体块 / 分层台·立方·圆柱·管路（非机械题材）</h2><div class="cv" id="c"></div></section>
+  <section class="tile"><h2>D　组合场景 / 流程 + 高亮 + 底部结论条</h2><div class="cv" id="d"></div></section>
+</div>
+<script src="kit.js"></script>
+<script>
+var M = 24, W = 732;          /* 左右边距 24；内容宽 732 -> 右边界 756 */
+var BOTTOM = 500;             /* 四块的底栏底边一致 */
+var RED = "#d94a44", GREEN = "#0f9d70";
+
+/* ---------------- A ---------------- */
+(function () {
+  var c = K.canvas(780, 540, { acc: "#2563eb" });
+
+  /* 卡片：20 内边距 / 标题 16 / 正文 13 lh21 / 胶囊距正文 18 */
+  c.card({ x: M, y: 76, w: 352, h: 160, r: 14 });
+  c.text({ x: M + 20, y: 108, s: "卡片标题", size: 16, weight: 700, fill: "ink" });
+  c.text({ x: M + 20, y: 130, s: ["白底 + 1px 边 + 柔和投影，", "正文 13px 行高 21，", "内边距四周都是 20。"],
+    size: 13, lh: 21, fill: "sub" });
+  c.pill({ x: M + 20, y: 190, s: "已就绪", fill: K.alpha(GREEN, .12), color: GREEN });
+
+  /* 节点链：三个 64 高的节点，间距 24，纵向连线带标签 */
+  c.node({ x: M, y: 260, w: 352, h: 64, title: "API 网关", icon: "⇄",
+    body: "统一鉴权、限流、灰度。", active: true });
+  c.node({ x: M, y: 348, w: 352, h: 64, title: "订单服务", icon: "◇",
+    body: "拆单、库存预占、异步回调。" });
+  c.node({ x: M, y: 436, w: 352, h: 64, title: "缓存", icon: "◍",
+    body: "热点数据、TTL 过期。" });
+  c.edge({ from: [200, 324], to: [200, 348], color: "acc", label: "调用" });
+  c.edge({ from: [200, 412], to: [200, 436], color: "steel", label: "回源" });
+
+  /* 横向连线 + 引线标签：标签落在箭头右侧，不与线叠 */
+  c.edge({ from: [376, 292], to: [420, 292], color: "steel", arrow: true });
+  c.callout({ x: 452, y: 280, s: "连线带箭头，标签贴线侧", to: [420, 292] });
+
+  /* 环：两个并排，中线对齐，左右外边距 50 对称 */
+  c.donut({ x: 522, y: 170, r: 64, sw: 16, p: .72, s: "72%", size: 22, sub: "缓存命中" });
+  c.donut({ x: 658, y: 170, r: 48, sw: 12, p: .38, color: GREEN, s: "38%", size: 16, sub: "灰度比例" });
+
+  /* 刻度：标签紧贴标尺，首尾各有一个数字 */
+  c.text({ x: 408, y: 340, s: "ticks()", size: 11, fill: "weak" });
+  c.ticks({ x: 408, y: 364, w: 348, n: 10, major: 5, baseline: true,
+    label: function (i) { return (i * 20) + ""; } });
+
+  /* 胶囊一排：间距 8，整体左对齐到 408 */
+  var px = 408;
+  ["HTML", "SVG", "React", "WebGL"].forEach(function (t) {
+    px += c.pill({ x: px, y: 430, s: t }) + 8;
+  });
+
+  c.mount("a");
+})();
+
+/* ---------------- B ---------------- */
+(function () {
+  var c = K.canvas(780, 540, { acc: "#2563eb" });
+
+  c.text({ x: M, y: 38, s: "本月成本结构", size: 18, weight: 800, fill: "ink" });
+  c.text({ x: M, y: 58, s: "单位：万元", size: 11.5, fill: "weak" });
+
+  /* KPI 卡：3 张 232 宽，间隙 18，正好铺满 732 */
+  [["总支出", "186.4", "+8.2%"], ["节省", "42.9", "+31%"], ["单均", "3.7", "-12%"]]
+    .forEach(function (k, i) {
+      var x = M + i * 250;
+      c.card({ x: x, y: 76, w: 232, h: 76, r: 14 });
+      c.text({ x: x + 20, y: 104, s: k[0], size: 11.5, fill: "sub" });
+      c.text({ x: x + 20, y: 136, s: k[1], size: 26, weight: 800, fill: "ink" });
+      c.text({ x: x + 20 + K.tw(k[1], 26) + 10, y: 136, s: k[2], size: 11, weight: 700,
+        fill: k[2][0] === "-" ? GREEN : RED });
+    });
+
+  /* 左右两张图共用 y 196..336 这条带，x 轴标签同在 352 */
+  c.text({ x: M, y: 180, s: "按部门", size: 12, weight: 700, fill: "sub" });
+  c.bars({ x: M, y: 196, w: 348, h: 140, p: 1,
+    data: [{ k: "研发", v: 72 }, { k: "市场", v: 48 }, { k: "运营", v: 34, hl: true }, { k: "行政", v: 21 }] });
+
+  c.text({ x: 408, y: 180, s: "12 周趋势", size: 12, weight: 700, fill: "sub" });
+  c.lineChart({ x: 408, y: 196, w: 348, h: 140, p: 1,
+    series: [{ pts: [30, 34, 31, 38, 36, 42, 40, 46, 44, 49, 52, 56], area: true, color: "#2563eb" },
+             { pts: [22, 24, 23, 26, 25, 27, 26, 29, 28, 30, 31, 33], color: GREEN, sw: 2 }],
+    xs: ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], xStep: 2 });
+
+  /* 底部结论条：强调条按圆角裁形，不会从左上角探出方角 */
+  c.card({ x: M, y: 392, w: W, h: 108, r: 14 });
+  c.accent({ x: M, y: 392, w: W, h: 108, r: 14, thick: 4 });
+  c.donut({ x: 72, y: 446, r: 30, sw: 8, p: .64, s: "64%", size: 15 });
+  c.text({ x: 124, y: 424, s: "三条结论用图元讲完，不用再堆字", size: 15, weight: 700, fill: "ink" });
+  c.text({ x: 124, y: 448, s: ["柱看结构、折线看趋势、环看占比 —— 同一块区域里放三种读数，", "比一整屏列表更容易记住。"],
+    size: 12.5, lh: 21, fill: "sub" });
+
+  c.mount("b");
+})();
+
+/* ---------------- C ---------------- */
+(function () {
+  var c = K.canvas(780, 540, { acc: "#2563eb" });
+  c.text({ x: M, y: 38, s: "同一套体块，画的是架构不是机器", size: 18, weight: 800, fill: "ink" });
+
+  var f = K.iso({ yaw: 40, cx: 150, cy: 105 });
+  var plate = [188, 205, 228], rack = [210, 225, 243], cap = [232, 241, 252];
+
+  /* 底座 */
+  f.box(0, 0, 0, 300, 210, 9, plate, { part: "base", ground: true });
+  f.box(6, 6, 9, 288, 198, 1.6, [222, 233, 247], { part: "base", ground: true, noBottom: true });
+
+  /* 三台机柜 + 正面散热格栅（细节来自循环，不是手摆） */
+  [14, 92, 170].forEach(function (rx) {
+    f.box(rx, 44, 10, 46, 96, 76, rack, { part: "rack" });
+    f.box(rx + 3, 47, 86, 40, 90, 4, cap, { part: "rack", noBottom: true });
+    for (var i = 0; i < 5; i++) {
+      f.box(rx + 7, 139, 20 + i * 13, 32, 3, 6, [166, 188, 215], { part: "rack", noBottom: true });
+    }
+  });
+
+  /* 数据仓（圆柱 + 顶盖 + 两道箍） */
+  f.cyl(252, 118, 9, 100, 30, [200, 217, 238], { part: "store", n: 24 });
+  f.cyl(252, 118, 100, 109, 22, cap, { part: "store", n: 24 });
+  [30, 62].forEach(function (z) {
+    f.cyl(252, 118, z, z + 4, 30.8, [178, 198, 224], { part: "store", n: 24, noTop: true, noBottom: true, op: 0.9 });
+  });
+
+  /* 两根管路：机柜 -> 数据仓。短到只剩拐弯的管段不要画，
+     四层描边叠在 20px 上会变成一个蓝色订书钉 */
+  f.pipe([[38, 190, 26], [38, 156, 26], [238, 156, 26], [238, 156, 52], [246, 150, 56]], 5, { part: "pipe", acc: "#2563eb", dark: "#7fa6d0" });
+
+  /* 客户端（放在最前面，验证遮挡） */
+  f.box(24, 178, 10, 46, 26, 16, [226, 236, 249], { part: "client" });
+  f.box(30, 172, 26, 34, 4, 12, [198, 216, 238], { part: "client" });
+
+  /* 投影收在底座里：rx/ry 比底座小，别让灰椭圆露到板子外面 */
+  f.shadow(150, 105, 168, 50);
+  f.flush(c, { x: 96, y: 60, w: 500, h: 372, pad: 12 });
+
+  /* 标签按目标点的高度自动落位：右侧两个贴 632，客户端放左侧 24，
+     引线因此不用横穿模型（横穿是这类图最显乱的一处） */
+  [[f.screen(60, 44, 88), "服务机柜 ×3", 612],
+   [f.screen(252, 118, 112), "数据仓", 612],
+   [f.screen(53, 190, 28), "客户端", M]].forEach(function (q) {
+    c.callout({ x: q[2], y: Math.round(q[0][1] - 12), s: q[1], to: q[0] });
+  });
+
+  c.card({ x: M, y: 452, w: W, h: 48, r: 14 });
+  c.text({ x: 44, y: 481, s: "等距体块不是机械图专用：分层架构、数据立方、货架、地图板块，都是同一套 box / prism / pipe。",
+    size: 12.5, fill: "sub" });
+  c.mount("c");
+})();
+
+/* ---------------- D ---------------- */
+(function () {
+  var c = K.canvas(780, 540, { acc: "#2563eb" });
+  c.text({ x: M, y: 38, s: "一次请求要穿过四个环节", size: 18, weight: 800, fill: "ink" });
+
+  /* 四个节点均分 732：159 宽 + 32 间隙 */
+  var xs = [24, 215, 406, 597], y = 76, w = 159, h = 96;
+  var N = [
+    { t: "客户端", i: "▭", b: "发起请求" },
+    { t: "网关", i: "⇄", b: "鉴权 / 限流" },
+    { t: "服务", i: "◇", b: "业务处理" },
+    { t: "存储", i: "◍", b: "落库 & 缓存" }
+  ];
+  N.forEach(function (n, i) {
+    c.node({ x: xs[i], y: y, w: w, h: h, title: n.t, icon: n.i, body: n.b, active: i === 2 });
+  });
+
+  /* 连线 + 流动点 */
+  for (var i = 0; i < 3; i++) {
+    c.edge({ from: [xs[i] + w, y + h / 2], to: [xs[i + 1], y + h / 2], color: "acc", sw: 2.2 });
+    for (var d = 0; d < 3; d++) {
+      c.circle({ x: xs[i] + w + 13 + d * 6, y: y + h / 2, r: 2, fill: "acc", op: .45 });
+    }
+  }
+
+  /* 耗时条：标题 208 / 柱区 224..340 / 轴标签 356 */
+  c.text({ x: M, y: 208, s: "各环节耗时（ms）", size: 12, weight: 700, fill: "sub" });
+  c.bars({ x: M, y: 224, w: 348, h: 116, p: 1,
+    data: [{ k: "客户端", v: 120 }, { k: "网关", v: 18 }, { k: "服务", v: 260, hl: true }, { k: "存储", v: 74 }] });
+
+  /* 结论卡：上下边对齐柱区 220..340，文字块在卡内居中 */
+  c.card({ x: 408, y: 220, w: 348, h: 120, r: 14 });
+  c.text({ x: 428, y: 260, s: "瓶颈不在网关", size: 15, weight: 700, fill: "ink" });
+  c.text({ x: 428, y: 286, s: ["业务服务占 55%，限流加在网关只挡掉 4%。", "要动的是下游调用，不是入口。"],
+    size: 12.5, lh: 21, fill: "sub" });
+
+  /* 底部条：文字两行 + 一条刻度，刻度与文字留 10 的呼吸 */
+  c.card({ x: M, y: 392, w: W, h: 108, r: 14 });
+  c.text({ x: 44, y: 420, s: ["刻度、胶囊、读数都不是装饰：它们让画面有\"可测量的部分\"，", "观众会觉得这是一张有信息量的图，而不是几个方块。"],
+    size: 12.5, lh: 20, fill: "sub" });
+  c.ticks({ x: 44, y: 462, w: 692, n: 12, major: 6, baseline: true,
+    label: function (i) { return i * 200 + ""; } });
+  c.mount("d");
+})();
+</script>
+</body>
+</html>
